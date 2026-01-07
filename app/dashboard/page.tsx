@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import CurrentTime from "../components/CurrentTime";
@@ -12,11 +12,12 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { data: session } = useSession();
+  const [operationLoading, setOperationLoading] = useState<Record<string, boolean>>({});
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   // 从数据库获取任务
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       const response = await fetch("/api/tasks");
       if (response.ok) {
@@ -28,18 +29,23 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    if (session) {
+    if (status === "authenticated") {
       fetchTasks();
-    } else {
+    } else if (status === "unauthenticated") {
       setIsLoading(false);
       router.push("/login");
     }
-  }, [session, router]);
+    // status === "loading" 时不做任何操作，等待认证状态确定
+  }, [status, router, fetchTasks]);
 
-  const handleAddNote = async (taskId: string, nodeId: string, note: string) => {
+  const handleAddNote = useCallback(async (taskId: string, nodeId: string, note: string) => {
+    const loadingKey = `note-${nodeId}`;
+    if (operationLoading[loadingKey]) return;
+
+    setOperationLoading(prev => ({ ...prev, [loadingKey]: true }));
     try {
       const response = await fetch("/api/tasks/nodes", {
         method: "PATCH",
@@ -64,10 +70,16 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error("Error adding note:", error);
+    } finally {
+      setOperationLoading(prev => ({ ...prev, [loadingKey]: false }));
     }
-  };
+  }, [operationLoading]);
 
-  const handleAddNode = async (taskId: string, afterNodeId: string) => {
+  const handleAddNode = useCallback(async (taskId: string, afterNodeId: string) => {
+    const loadingKey = `addNode-${taskId}-${afterNodeId}`;
+    if (operationLoading[loadingKey]) return;
+
+    setOperationLoading(prev => ({ ...prev, [loadingKey]: true }));
     try {
       const response = await fetch("/api/tasks/nodes", {
         method: "POST",
@@ -76,14 +88,36 @@ export default function Dashboard() {
       });
 
       if (response.ok) {
-        await fetchTasks();
+        const newNode = await response.json();
+        // 乐观更新：在afterNodeId后插入新节点
+        setTasks((prevTasks) =>
+          prevTasks.map((task) => {
+            if (task.id === taskId) {
+              const afterIndex = task.nodes.findIndex((n) => n.id === afterNodeId);
+              const newNodes = [...task.nodes];
+              newNodes.splice(afterIndex + 1, 0, {
+                ...newNode,
+                note: undefined,
+                completedAt: undefined,
+              });
+              return { ...task, nodes: newNodes };
+            }
+            return task;
+          })
+        );
       }
     } catch (error) {
       console.error("Error adding node:", error);
+    } finally {
+      setOperationLoading(prev => ({ ...prev, [loadingKey]: false }));
     }
-  };
+  }, [operationLoading]);
 
-  const handleComplete = async (taskId: string, nodeId: string) => {
+  const handleComplete = useCallback(async (taskId: string, nodeId: string) => {
+    const loadingKey = `complete-${nodeId}`;
+    if (operationLoading[loadingKey]) return;
+
+    setOperationLoading(prev => ({ ...prev, [loadingKey]: true }));
     try {
       const response = await fetch("/api/tasks/nodes", {
         method: "PATCH",
@@ -118,14 +152,20 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error("Error completing node:", error);
+    } finally {
+      setOperationLoading(prev => ({ ...prev, [loadingKey]: false }));
     }
-  };
+  }, [operationLoading]);
 
-  const handleUpdateDescription = async (
+  const handleUpdateDescription = useCallback(async (
     taskId: string,
     nodeId: string,
     description: string
   ) => {
+    const loadingKey = `desc-${nodeId}`;
+    if (operationLoading[loadingKey]) return;
+
+    setOperationLoading(prev => ({ ...prev, [loadingKey]: true }));
     try {
       const response = await fetch("/api/tasks/nodes", {
         method: "PATCH",
@@ -150,10 +190,16 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error("Error updating description:", error);
+    } finally {
+      setOperationLoading(prev => ({ ...prev, [loadingKey]: false }));
     }
-  };
+  }, [operationLoading]);
 
-  const handleDelete = async (taskId: string, nodeId: string) => {
+  const handleDelete = useCallback(async (taskId: string, nodeId: string) => {
+    const loadingKey = `delete-${nodeId}`;
+    if (operationLoading[loadingKey]) return;
+
+    setOperationLoading(prev => ({ ...prev, [loadingKey]: true }));
     try {
       const response = await fetch(`/api/tasks/nodes?nodeId=${nodeId}`, {
         method: "DELETE",
@@ -177,10 +223,16 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error("Error deleting node:", error);
+    } finally {
+      setOperationLoading(prev => ({ ...prev, [loadingKey]: false }));
     }
-  };
+  }, [operationLoading]);
 
-  const handleAddTask = async (taskName: string) => {
+  const handleAddTask = useCallback(async (taskName: string) => {
+    const loadingKey = 'addTask';
+    if (operationLoading[loadingKey]) return;
+
+    setOperationLoading(prev => ({ ...prev, [loadingKey]: true }));
     try {
       const response = await fetch("/api/tasks", {
         method: "POST",
@@ -194,10 +246,16 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error("Error adding task:", error);
+    } finally {
+      setOperationLoading(prev => ({ ...prev, [loadingKey]: false }));
     }
-  };
+  }, [operationLoading]);
 
-  const handleCompleteTask = async (taskId: string) => {
+  const handleCompleteTask = useCallback(async (taskId: string) => {
+    const loadingKey = `completeTask-${taskId}`;
+    if (operationLoading[loadingKey]) return;
+
+    setOperationLoading(prev => ({ ...prev, [loadingKey]: true }));
     try {
       const response = await fetch("/api/tasks/complete", {
         method: "POST",
@@ -225,14 +283,51 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error("Error completing task:", error);
+    } finally {
+      setOperationLoading(prev => ({ ...prev, [loadingKey]: false }));
     }
-  };
+  }, [operationLoading]);
 
-  if (!session) {
+  // 缓存 actions 避免 CurrentTime 重渲染
+  const timeActions = useMemo(() => (
+    <div className="flex gap-3">
+      <button
+        onClick={() => setIsDialogOpen(true)}
+        className="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
+      >
+        Add Task
+      </button>
+      <div className="flex items-center gap-3">
+        <span className="text-gray-700">
+          {session?.user?.name || session?.user?.email}
+        </span>
+        <button
+          onClick={() => signOut({ callbackUrl: "/" })}
+          className="px-4 py-2 text-indigo-600 bg-white hover:bg-gray-50 rounded-lg transition-colors shadow-sm border border-indigo-200"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  ), [session?.user?.name, session?.user?.email]);
+
+  // 认证状态加载中
+  if (status === "loading") {
     return (
       <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Please login first...</p>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 未认证
+  if (status === "unauthenticated") {
+    return (
+      <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Redirecting to login...</p>
         </div>
       </div>
     );
@@ -242,29 +337,7 @@ export default function Dashboard() {
     <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col overflow-hidden">
       {/* Fixed time display and buttons */}
       <div className="flex-shrink-0">
-        <CurrentTime
-          actions={
-            <div className="flex gap-3">
-              <button
-                onClick={() => setIsDialogOpen(true)}
-                className="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
-              >
-                Add Task
-              </button>
-              <div className="flex items-center gap-3">
-                <span className="text-gray-700">
-                  {session.user?.name || session.user?.email}
-                </span>
-                <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                  className="px-4 py-2 text-indigo-600 bg-white hover:bg-gray-50 rounded-lg transition-colors shadow-sm border border-indigo-200"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          }
-        />
+        <CurrentTime actions={timeActions} />
       </div>
 
       {/* Scrollable task list area */}

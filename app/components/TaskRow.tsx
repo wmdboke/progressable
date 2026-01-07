@@ -2,6 +2,7 @@
 
 import { Task } from "../types";
 import TaskNodeCard from "./TaskNodeCard";
+import { memo, useCallback, useMemo } from "react";
 
 interface TaskRowProps {
   task: Task;
@@ -18,7 +19,7 @@ interface TaskRowProps {
   onCompleteTask?: (taskId: string) => void;
 }
 
-export default function TaskRow({
+function TaskRow({
   task,
   index,
   onAddNote,
@@ -29,20 +30,51 @@ export default function TaskRow({
   onCompleteTask,
 }: TaskRowProps) {
   // Check if current and next nodes are both completed
-  const isArrowCompleted = (currentIndex: number) => {
+  const isArrowCompleted = useCallback((currentIndex: number) => {
     const currentNode = task.nodes[currentIndex];
     const nextNode = task.nodes[currentIndex + 1];
     return currentNode?.isCompleted && nextNode?.isCompleted;
-  };
+  }, [task.nodes]);
 
   // Check if all nodes are completed
-  const isAllCompleted = task.nodes.every((node) => node.isCompleted);
+  const isAllCompleted = useMemo(
+    () => task.nodes.every((node) => node.isCompleted),
+    [task.nodes]
+  );
 
-  const handleCompleteTask = () => {
+  const handleCompleteTask = useCallback(() => {
     if (onCompleteTask) {
       onCompleteTask(task.id);
     }
-  };
+  }, [task.id, onCompleteTask]);
+
+  // Memoize event handlers
+  const handleAddNote = useCallback(
+    (nodeId: string, note: string) => onAddNote?.(task.id, nodeId, note),
+    [task.id, onAddNote]
+  );
+
+  const handleAddNode = useCallback(
+    (nodeId: string) => onAddNode?.(task.id, nodeId),
+    [task.id, onAddNode]
+  );
+
+  const handleComplete = useCallback(
+    (nodeId: string) => onComplete?.(task.id, nodeId),
+    [task.id, onComplete]
+  );
+
+  const handleUpdateDescription = useCallback(
+    (nodeId: string, description: string) =>
+      onUpdateDescription?.(task.id, nodeId, description),
+    [task.id, onUpdateDescription]
+  );
+
+  const handleDelete = useCallback(
+    (nodeId: string) => onDelete?.(task.id, nodeId),
+    [task.id, onDelete]
+  );
+
 
   return (
     <div className="flex items-center gap-4 p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow">
@@ -63,13 +95,11 @@ export default function TaskRow({
             {/* Node card */}
             <TaskNodeCard
               node={node}
-              onAddNote={(nodeId, note) => onAddNote?.(task.id, nodeId, note)}
-              onAddNode={(nodeId) => onAddNode?.(task.id, nodeId)}
-              onComplete={(nodeId) => onComplete?.(task.id, nodeId)}
-              onUpdateDescription={(nodeId, description) =>
-                onUpdateDescription?.(task.id, nodeId, description)
-              }
-              onDelete={(nodeId) => onDelete?.(task.id, nodeId)}
+              onAddNote={handleAddNote}
+              onAddNode={handleAddNode}
+              onComplete={handleComplete}
+              onUpdateDescription={handleUpdateDescription}
+              onDelete={handleDelete}
             />
 
             {/* Arrow (not the last node) */}
@@ -130,3 +160,5 @@ export default function TaskRow({
     </div>
   );
 }
+
+export default memo(TaskRow);

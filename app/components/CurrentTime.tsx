@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, ReactNode, memo } from 'react';
 
 interface CurrentTimeProps {
   actions?: ReactNode;
 }
 
-export default function CurrentTime({ actions }: CurrentTimeProps) {
+function CurrentTime({ actions }: CurrentTimeProps) {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -62,3 +62,5 @@ export default function CurrentTime({ actions }: CurrentTimeProps) {
     </div>
   );
 }
+
+export default memo(CurrentTime);

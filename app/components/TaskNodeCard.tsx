@@ -1,7 +1,7 @@
 'use client';
 
 import { TaskNode } from '../types';
-import { useState } from 'react';
+import { useState, memo, useCallback, useMemo } from 'react';
 
 interface TaskNodeCardProps {
   node: TaskNode;
@@ -12,7 +12,7 @@ interface TaskNodeCardProps {
   onDelete?: (nodeId: string) => void;
 }
 
-export default function TaskNodeCard({
+function TaskNodeCard({
   node,
   onAddNote,
   onAddNode,
@@ -27,7 +27,7 @@ export default function TaskNodeCard({
   const [descriptionText, setDescriptionText] = useState(node.description);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const formatTime = (dateString?: string) => {
+  const formatTime = useCallback((dateString?: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleString('zh-CN', {
@@ -36,40 +36,44 @@ export default function TaskNodeCard({
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
+  }, []);
 
-  const handleSaveNote = () => {
+  const handleSaveNote = useCallback(() => {
     if (onAddNote) {
       onAddNote(node.id, noteText);
     }
     setIsEditingNote(false);
-  };
+  }, [node.id, noteText, onAddNote]);
 
-  const handleSaveDescription = () => {
+  const handleSaveDescription = useCallback(() => {
     if (onUpdateDescription && descriptionText.trim()) {
       onUpdateDescription(node.id, descriptionText);
     }
     setIsEditingDescription(false);
-  };
+  }, [node.id, descriptionText, onUpdateDescription]);
 
-  const handleComplete = () => {
+  const handleComplete = useCallback(() => {
     if (onComplete) {
       onComplete(node.id);
     }
-  };
+  }, [node.id, onComplete]);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (onDelete && confirm('Are you sure you want to delete this node?')) {
       onDelete(node.id);
     }
-  };
+  }, [node.id, onDelete]);
 
   // Check if description exceeds limit
   const maxLength = 40;
-  const needsExpansion = node.description.length > maxLength;
-  const displayDescription = !isExpanded && needsExpansion
-    ? node.description.slice(0, maxLength) + '...'
-    : node.description;
+  const { needsExpansion, displayDescription } = useMemo(() => {
+    const needsExpansion = node.description.length > maxLength;
+    const displayDescription = !isExpanded && needsExpansion
+      ? node.description.slice(0, maxLength) + '...'
+      : node.description;
+    return { needsExpansion, displayDescription };
+  }, [node.description, isExpanded]);
+
 
   return (
     <div
@@ -247,3 +251,5 @@ export default function TaskNodeCard({
     </div>
   );
 }
+
+export default memo(TaskNodeCard);
