@@ -173,7 +173,7 @@ export default function Dashboard() {
         );
       } else {
         const data = await response.json();
-        alert(data.error || "删除失败");
+        alert(data.error || "Failed to delete");
       }
     } catch (error) {
       console.error("Error deleting node:", error);
@@ -232,7 +232,7 @@ export default function Dashboard() {
     return (
       <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">请先登录...</p>
+          <p className="text-gray-600">Please login first...</p>
         </div>
       </div>
     );
@@ -240,7 +240,7 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col overflow-hidden">
-      {/* 固定的时间显示和按钮 */}
+      {/* Fixed time display and buttons */}
       <div className="flex-shrink-0">
         <CurrentTime
           actions={
@@ -249,7 +249,7 @@ export default function Dashboard() {
                 onClick={() => setIsDialogOpen(true)}
                 className="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
               >
-                新增任务
+                Add Task
               </button>
               <div className="flex items-center gap-3">
                 <span className="text-gray-700">
@@ -259,7 +259,7 @@ export default function Dashboard() {
                   onClick={() => signOut({ callbackUrl: "/" })}
                   className="px-4 py-2 text-indigo-600 bg-white hover:bg-gray-50 rounded-lg transition-colors shadow-sm border border-indigo-200"
                 >
-                  登出
+                  Logout
                 </button>
               </div>
             </div>
@@ -267,16 +267,16 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* 可滚动的任务列表区域 */}
+      {/* Scrollable task list area */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-[1800px] mx-auto px-8 pb-12">
           {isLoading ? (
             <div className="text-center py-12">
-              <p className="text-gray-600">加载中...</p>
+              <p className="text-gray-600">Loading...</p>
             </div>
           ) : tasks.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-600">暂无任务，点击"新增任务"创建第一个任务吧！</p>
+              <p className="text-gray-600">No tasks yet. Click "Add Task" to create your first task!</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -298,7 +298,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 添加任务对话框 */}
+      {/* Add task dialog */}
       <AddTaskDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}

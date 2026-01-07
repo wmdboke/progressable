@@ -1,7 +1,7 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
-import { useState } from 'react';
+import { signIn, useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -11,6 +11,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/dashboard");
+    }
+  }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,13 +32,13 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setMessage('邮箱或密码错误');
+        setMessage('Invalid email or password');
       } else if (result?.ok) {
         router.push('/dashboard');
         router.refresh();
       }
     } catch (error) {
-      setMessage('登录失败，请重试');
+      setMessage('Login failed, please try again');
     } finally {
       setIsLoading(false);
     }
@@ -42,7 +49,7 @@ export default function LoginPage() {
     try {
       await signIn('google', { callbackUrl: '/dashboard' });
     } catch (error) {
-      setMessage('Google 登录失败，请重试');
+      setMessage('Google login failed, please try again');
       setIsLoading(false);
     }
   };
@@ -50,7 +57,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8 relative">
-        {/* 返回首页链接 */}
         <Link
           href="/"
           className="absolute top-4 left-4 text-gray-600 hover:text-gray-800 flex items-center gap-1 text-sm"
@@ -68,17 +74,16 @@ export default function LoginPage() {
               d="M10 19l-7-7m0 0l7-7m-7 7h18"
             />
           </svg>
-          返回首页
+          Back to Home
         </Link>
 
-        <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">登录</h1>
-        <p className="text-gray-600 text-center mb-8">欢迎回来</p>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">Login</h1>
+        <p className="text-gray-600 text-center mb-8">Welcome back</p>
 
-        {/* 邮箱密码登录 */}
         <form onSubmit={handleSubmit} className="mb-4">
           <div className="mb-4">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              邮箱地址
+              Email Address
             </label>
             <input
               id="email"
@@ -93,7 +98,7 @@ export default function LoginPage() {
 
           <div className="mb-6">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              密码
+              Password
             </label>
             <input
               id="password"
@@ -111,14 +116,14 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? '登录中...' : '登录'}
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
         {message && (
           <div
             className={`mb-4 p-3 rounded-lg text-sm ${
-              message.includes('成功')
+              message.includes('success')
                 ? 'bg-green-50 text-green-700'
                 : 'bg-red-50 text-red-700'
             }`}
@@ -132,11 +137,10 @@ export default function LoginPage() {
             <div className="w-full border-t border-gray-300" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">或</span>
+            <span className="px-2 bg-white text-gray-500">Or</span>
           </div>
         </div>
 
-        {/* Google 登录 */}
         <button
           onClick={handleGoogleSignIn}
           disabled={isLoading}
@@ -160,13 +164,13 @@ export default function LoginPage() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          <span className="text-gray-700 font-medium">使用 Google 登录</span>
+          <span className="text-gray-700 font-medium">Sign in with Google</span>
         </button>
 
         <p className="mt-6 text-center text-sm text-gray-600">
-          还没有账号？{' '}
+          Don't have an account?{' '}
           <Link href="/register" className="text-indigo-600 hover:text-indigo-700 font-medium">
-            立即注册
+            Sign up now
           </Link>
         </p>
       </div>

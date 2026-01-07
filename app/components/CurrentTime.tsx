@@ -10,7 +10,7 @@ export default function CurrentTime({ actions }: CurrentTimeProps) {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   useEffect(() => {
-    // 客户端挂载后立即设置时间
+    // Set time immediately after client mount
     setCurrentTime(new Date());
 
     const timer = setInterval(() => {
@@ -21,11 +21,11 @@ export default function CurrentTime({ actions }: CurrentTimeProps) {
   }, []);
 
   const formatDate = (date: Date) => {
-    const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return days[date.getDay()];
   };
 
-  // 在客户端挂载前显示占位符
+  // Show placeholder before client mount
   if (!currentTime) {
     return (
       <div className="py-8 px-8">

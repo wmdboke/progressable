@@ -3,10 +3,18 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function LandingPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+
+  // 如果已登录，自动跳转到 dashboard
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/dashboard");
+    }
+  }, [status, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -20,7 +28,7 @@ export default function LandingPage() {
                 href="/dashboard"
                 className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
-                进入应用
+                Go to App
               </Link>
             ) : (
               <>
@@ -28,13 +36,13 @@ export default function LandingPage() {
                   href="/login"
                   className="px-6 py-2 text-indigo-600 hover:text-indigo-700 transition-colors"
                 >
-                  登录
+                  Login
                 </Link>
                 <Link
                   href="/register"
                   className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
-                  免费注册
+                  Sign Up
                 </Link>
               </>
             )}
@@ -45,10 +53,10 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="container mx-auto px-6 py-20 text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-          可视化任务进度管理
+          Visual Task Progress Management
         </h1>
         <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          用流程图的方式管理任务，让每个任务的进度一目了然。从开始到完成，每个节点都清晰可见。
+          Manage tasks with flowcharts. Track every task's progress at a glance. From start to finish, every node is clearly visible.
         </p>
         <div className="flex gap-4 justify-center">
           {session ? (
@@ -56,7 +64,7 @@ export default function LandingPage() {
               href="/dashboard"
               className="px-8 py-4 bg-indigo-600 text-white text-lg rounded-lg hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl"
             >
-              进入应用 →
+              Go to App →
             </Link>
           ) : (
             <>
@@ -64,13 +72,13 @@ export default function LandingPage() {
                 href="/register"
                 className="px-8 py-4 bg-indigo-600 text-white text-lg rounded-lg hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl"
               >
-                立即开始 →
+                Get Started →
               </Link>
               <Link
                 href="/login"
                 className="px-8 py-4 bg-white text-indigo-600 text-lg rounded-lg border-2 border-indigo-600 hover:bg-indigo-50 transition-colors"
               >
-                登录
+                Login
               </Link>
             </>
           )}
@@ -80,7 +88,7 @@ export default function LandingPage() {
       {/* Features Section */}
       <section className="container mx-auto px-6 py-20">
         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-          核心功能
+          Core Features
         </h2>
         <div className="grid md:grid-cols-3 gap-8">
           {/* Feature 1 */}
@@ -101,10 +109,10 @@ export default function LandingPage() {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              流程可视化
+              Process Visualization
             </h3>
             <p className="text-gray-600">
-              用流程图的方式展示任务进度，每个节点都清晰可见，进度一目了然。
+              Display task progress with flowcharts. Every node is clearly visible, progress at a glance.
             </p>
           </div>
 
@@ -126,10 +134,10 @@ export default function LandingPage() {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              实时追踪
+              Real-time Tracking
             </h3>
             <p className="text-gray-600">
-              实时记录每个节点的完成时间，轻松回顾任务进展，把控项目节奏。
+              Record completion time for each node in real-time. Easily review task progress and control project rhythm.
             </p>
           </div>
 
@@ -151,10 +159,10 @@ export default function LandingPage() {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              灵活编辑
+              Flexible Editing
             </h3>
             <p className="text-gray-600">
-              随时添加、编辑、删除节点，为每个节点添加备注，让任务管理更加灵活。
+              Add, edit, delete nodes anytime. Add notes to each node for more flexible task management.
             </p>
           </div>
         </div>
@@ -164,24 +172,24 @@ export default function LandingPage() {
       <section className="container mx-auto px-6 py-20">
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-12 text-center text-white">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            准备好开始了吗？
+            Ready to Get Started?
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            立即注册，开始高效管理你的任务
+            Sign up now and start managing your tasks efficiently
           </p>
           {session ? (
             <Link
               href="/dashboard"
               className="inline-block px-8 py-4 bg-white text-indigo-600 text-lg font-semibold rounded-lg hover:bg-gray-100 transition-colors"
             >
-              进入应用 →
+              Go to App →
             </Link>
           ) : (
             <Link
               href="/register"
               className="inline-block px-8 py-4 bg-white text-indigo-600 text-lg font-semibold rounded-lg hover:bg-gray-100 transition-colors"
             >
-              免费注册 →
+              Sign Up Free →
             </Link>
           )}
         </div>

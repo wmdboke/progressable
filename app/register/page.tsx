@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -13,6 +13,14 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const router = useRouter();
+  const { status } = useSession();
+
+  // 如果已登录，自动跳转到 dashboard
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/dashboard");
+    }
+  }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,13 +28,13 @@ export default function RegisterPage() {
     setMessage('');
 
     if (password !== confirmPassword) {
-      setMessage('两次输入的密码不一致');
+      setMessage('Passwords do not match');
       setIsLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setMessage('密码长度至少为 6 位');
+      setMessage('Password must be at least 6 characters');
       setIsLoading(false);
       return;
     }
@@ -41,15 +49,15 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('注册成功！正在跳转到登录页...');
+        setMessage('Registration successful! Redirecting to login...');
         setTimeout(() => {
           router.push('/login');
         }, 1500);
       } else {
-        setMessage(data.error || '注册失败，请重试');
+        setMessage(data.error || 'Registration failed, please try again');
       }
     } catch (error) {
-      setMessage('注册失败，请重试');
+      setMessage('Registration failed, please try again');
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +68,7 @@ export default function RegisterPage() {
     try {
       await signIn('google', { callbackUrl: '/dashboard' });
     } catch (error) {
-      setMessage('Google 注册失败，请重试');
+      setMessage('Google sign up failed, please try again');
       setIsLoading(false);
     }
   };
@@ -68,7 +76,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8 relative">
-        {/* 返回首页链接 */}
         <Link
           href="/"
           className="absolute top-4 left-4 text-gray-600 hover:text-gray-800 flex items-center gap-1 text-sm"
@@ -86,31 +93,29 @@ export default function RegisterPage() {
               d="M10 19l-7-7m0 0l7-7m-7 7h18"
             />
           </svg>
-          返回首页
+          Back to Home
         </Link>
 
-        <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">注册</h1>
-        <p className="text-gray-600 text-center mb-8">创建您的账号</p>
-
-        {/* 邮箱密码注册 */}
+        <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">Sign Up</h1>
+        <p className="text-gray-600 text-center mb-8">Create your account</p>
         <form onSubmit={handleSubmit} className="mb-4">
           <div className="mb-4">
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-              姓名（可选）
+              Name (optional)
             </label>
             <input
               id="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="请输入您的姓名"
+              placeholder="Enter your name"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>
 
           <div className="mb-4">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              邮箱地址
+              Email Address
             </label>
             <input
               id="email"
@@ -125,14 +130,14 @@ export default function RegisterPage() {
 
           <div className="mb-4">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              密码
+              Password
             </label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="至少 6 位"
+              placeholder="At least 6 characters"
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
@@ -140,14 +145,14 @@ export default function RegisterPage() {
 
           <div className="mb-6">
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              确认密码
+              Confirm Password
             </label>
             <input
               id="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="再次输入密码"
+              placeholder="Re-enter password"
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
@@ -158,14 +163,14 @@ export default function RegisterPage() {
             disabled={isLoading}
             className="w-full px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? '注册中...' : '注册'}
+            {isLoading ? 'Signing up...' : 'Sign Up'}
           </button>
         </form>
 
         {message && (
           <div
             className={`mb-4 p-3 rounded-lg text-sm ${
-              message.includes('成功')
+              message.includes('successful')
                 ? 'bg-green-50 text-green-700'
                 : 'bg-red-50 text-red-700'
             }`}
@@ -179,11 +184,10 @@ export default function RegisterPage() {
             <div className="w-full border-t border-gray-300" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">或</span>
+            <span className="px-2 bg-white text-gray-500">Or</span>
           </div>
         </div>
 
-        {/* Google 注册 */}
         <button
           onClick={handleGoogleRegister}
           disabled={isLoading}
@@ -207,13 +211,13 @@ export default function RegisterPage() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          <span className="text-gray-700 font-medium">使用 Google 注册</span>
+          <span className="text-gray-700 font-medium">Sign up with Google</span>
         </button>
 
         <p className="mt-6 text-center text-sm text-gray-600">
-          已经有账号了？{' '}
+          Already have an account?{' '}
           <Link href="/login" className="text-indigo-600 hover:text-indigo-700 font-medium">
-            立即登录
+            Login now
           </Link>
         </p>
       </div>

@@ -15,8 +15,8 @@ export const authConfig = {
     Credentials({
       name: 'credentials',
       credentials: {
-        email: { label: '邮箱', type: 'email' },
-        password: { label: '密码', type: 'password' },
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -60,12 +60,12 @@ export const authConfig = {
       const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
 
       if (isOnDashboard) {
-        // Dashboard 需要登录
+        // Dashboard requires login
         if (isLoggedIn) return true;
-        return false; // 重定向到登录页
+        return false; // Redirect to login page
       }
 
-      return true; // 其他页面允许访问
+      return true; // Allow access to other pages
     },
   },
 } satisfies NextAuthConfig;
