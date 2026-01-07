@@ -3,27 +3,28 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
+import {
+  registerSchema,
+  zodErrorToArray,
+  generateUsernameFromEmail,
+} from '@/lib/auth';
 
-// 开发阶段：直接注册成功，不进行邮箱验证
-// TODO: 生产环境需要添加邮箱验证（使用 Resend 或其他邮件服务）
+/**
+ * 用户注册 API
+ * 使用模块化的 zod schema 和工具函数
+ */
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, name } = await request.json();
+    const body = await request.json();
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: '邮箱和密码不能为空' },
-        { status: 400 }
-      );
-    }
+    // 使用 zod 校验输入数据
+    const validatedData = registerSchema.parse({
+      ...body,
+      confirmPassword: body.password, // API 端不需要 confirmPassword，但为了使用同一个 schema
+    });
 
-    // 验证密码长度
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: '密码长度至少为 6 位' },
-        { status: 400 }
-      );
-    }
+    const { email, password, name } = validatedData;
 
     // 检查用户是否已存在
     const existingUser = await db
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser.length > 0) {
       return NextResponse.json(
-        { error: '该邮箱已被注册' },
+        { error: 'Email already registered' },
         { status: 400 }
       );
     }
@@ -42,26 +43,36 @@ export async function POST(request: NextRequest) {
     // 加密密码
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 创建用户（开发阶段：直接创建，不需要邮箱验证）
+    // 创建用户
     const userId = `user-${Date.now()}`;
     await db.insert(users).values({
       id: userId,
       email,
       password: hashedPassword,
-      name: name || email.split('@')[0],
+      name: name || generateUsernameFromEmail(email),
       // 开发阶段：直接设置为已验证
+      // TODO: 生产环境需要添加邮箱验证
       emailVerified: new Date(),
     });
 
     return NextResponse.json({
       success: true,
-      message: '注册成功，请登录',
+      message: 'Registration successful',
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      // 返回 zod 验证错误
+      return NextResponse.json(
+        { error: 'Validation failed', fields: zodErrorToArray(error) },
+        { status: 400 }
+      );
+    }
+
     console.error('Registration error:', error);
     return NextResponse.json(
-      { error: '注册失败，请稍后重试' },
+      { error: 'Registration failed, please try again' },
       { status: 500 }
     );
   }
 }
+

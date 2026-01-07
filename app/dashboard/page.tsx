@@ -34,12 +34,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (status === "authenticated") {
       fetchTasks();
-    } else if (status === "unauthenticated") {
-      setIsLoading(false);
-      router.push("/login");
     }
-    // status === "loading" 时不做任何操作，等待认证状态确定
-  }, [status, router, fetchTasks]);
+  }, [status, fetchTasks]);
 
   const handleAddNote = useCallback(async (taskId: string, nodeId: string, note: string) => {
     const loadingKey = `note-${nodeId}`;
@@ -322,17 +318,7 @@ export default function Dashboard() {
     );
   }
 
-  // 未认证
-  if (status === "unauthenticated") {
-    return (
-      <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Redirecting to login...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // 已认证 - 显示页面（middleware 已处理未认证的情况）
   return (
     <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col overflow-hidden">
       {/* Fixed time display and buttons */}
