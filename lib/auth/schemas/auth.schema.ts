@@ -22,7 +22,7 @@ export const emailSchema = z
  * @param min 最小长度（默认 6）
  * @param max 最大长度（默认 100）
  */
-export const createPasswordSchema = (min = 6, max = 100) =>
+export const createPasswordSchema = (min = 6, max = 20) =>
   z
     .string()
     .min(min, { message: `Password must be at least ${min} characters` })

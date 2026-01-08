@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import CurrentTime from "../components/CurrentTime";
 import TaskListItem from "../components/TaskListItem";
 import TaskTimeline from "../components/TaskTimeline";
 import AddTaskDialog from "../components/AddTaskDialog";
+import Header from "../components/Header";
 import { Task } from "../types";
 
 export default function Dashboard() {
@@ -320,27 +321,7 @@ export default function Dashboard() {
   }, [selectedTaskId, incompleteTasks, completedTasks, tasks]);
 
   // 缓存 actions 避免 CurrentTime 重渲染
-  const timeActions = useMemo(() => (
-    <div className="flex gap-3">
-      <button
-        onClick={() => setIsDialogOpen(true)}
-        className="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
-      >
-        Add Task
-      </button>
-      <div className="flex items-center gap-3">
-        <span className="text-gray-700">
-          {session?.user?.name || session?.user?.email}
-        </span>
-        <button
-          onClick={() => signOut({ callbackUrl: "/" })}
-          className="px-4 py-2 text-indigo-600 bg-white hover:bg-gray-50 rounded-lg transition-colors shadow-sm border border-indigo-200"
-        >
-          Logout
-        </button>
-      </div>
-    </div>
-  ), [session?.user?.name, session?.user?.email]);
+  const timeActions = useMemo(() => null, []);
 
   // 认证状态加载中
   if (status === "loading") {
@@ -356,6 +337,9 @@ export default function Dashboard() {
   // 已认证 - 显示页面（middleware 已处理未认证的情况）
   return (
     <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col overflow-hidden">
+      {/* Header */}
+      <Header variant="dashboard" />
+
       {/* Fixed time display and buttons */}
       <div className="flex-shrink-0">
         <CurrentTime actions={timeActions} />
@@ -364,53 +348,79 @@ export default function Dashboard() {
       {/* Main content area - Left-Right Split */}
       <div className="flex-1 flex overflow-hidden px-8 pb-8 gap-6">
         {/* Left side: Task list */}
-        <div className="w-80 bg-white rounded-xl shadow-md overflow-y-auto p-4">
-          {isLoading ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Loading...</p>
-            </div>
-          ) : tasks.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">No tasks yet. Click "Add Task" to create your first task!</p>
-            </div>
-          ) : (
-            <>
-              {/* Incomplete tasks */}
-              <div className="space-y-2">
-                {incompleteTasks.map((task) => (
-                  <TaskListItem
-                    key={task.id}
-                    task={task}
-                    isSelected={selectedTaskId === task.id}
-                    isCompleted={false}
-                    onClick={setSelectedTaskId}
-                  />
-                ))}
-              </div>
+        <div className="w-80 bg-white rounded-xl shadow-md flex flex-col overflow-hidden">
+          {/* Task list header */}
+          <div className="flex-shrink-0 p-4 border-b border-gray-200">
+            <button
+              onClick={() => setIsDialogOpen(true)}
+              className="w-full px-4 py-2.5 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm font-medium flex items-center justify-center gap-2"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Add Task
+            </button>
+          </div>
 
-              {/* Divider */}
-              {completedTasks.length > 0 && (
-                <div className="my-4 border-t-2 border-gray-300 relative">
-                  <span className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-gray-500">
-                    已完成
-                  </span>
+          {/* Task list content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {isLoading ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600">Loading...</p>
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600 text-sm">No tasks yet. Click "Add Task" to create your first task!</p>
+              </div>
+            ) : (
+              <>
+                {/* Incomplete tasks */}
+                <div className="space-y-2">
+                  {incompleteTasks.map((task) => (
+                    <TaskListItem
+                      key={task.id}
+                      task={task}
+                      isSelected={selectedTaskId === task.id}
+                      isCompleted={false}
+                      onClick={setSelectedTaskId}
+                    />
+                  ))}
                 </div>
-              )}
 
-              {/* Completed tasks */}
-              <div className="space-y-2">
-                {completedTasks.map((task) => (
-                  <TaskListItem
-                    key={task.id}
-                    task={task}
-                    isSelected={selectedTaskId === task.id}
-                    isCompleted={true}
-                    onClick={setSelectedTaskId}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+                {/* Divider */}
+                {completedTasks.length > 0 && (
+                  <div className="my-4 border-t-2 border-gray-300 relative">
+                    <span className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-gray-500">
+                      已完成
+                    </span>
+                  </div>
+                )}
+
+                {/* Completed tasks */}
+                <div className="space-y-2">
+                  {completedTasks.map((task) => (
+                    <TaskListItem
+                      key={task.id}
+                      task={task}
+                      isSelected={selectedTaskId === task.id}
+                      isCompleted={true}
+                      onClick={setSelectedTaskId}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Right side: Timeline */}

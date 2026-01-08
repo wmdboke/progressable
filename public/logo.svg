@@ -1,0 +1,19 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="90" fill="#3B82F6"/>
+
+  <!-- Progress Circle Track -->
+  <circle cx="100" cy="100" r="65" stroke="#E5E7EB" stroke-width="12" fill="none"/>
+
+  <!-- Progress Circle Fill (75% complete) -->
+  <circle cx="100" cy="100" r="65" stroke="#10B981" stroke-width="12" fill="none"
+          stroke-dasharray="306 408" stroke-dashoffset="102"
+          stroke-linecap="round" transform="rotate(-90 100 100)"/>
+
+  <!-- Center Icon - Letter P -->
+  <text x="100" y="120" font-family="Arial, sans-serif" font-size="72" font-weight="bold"
+        fill="white" text-anchor="middle">P</text>
+
+  <!-- Small dot indicator -->
+  <circle cx="100" cy="35" r="6" fill="#10B981"/>
+</svg>
