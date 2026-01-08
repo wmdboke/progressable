@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import CurrentTime from "../components/CurrentTime";
-import TaskRow from "../components/TaskRow";
+import TaskListItem from "../components/TaskListItem";
+import TaskTimeline from "../components/TaskTimeline";
 import AddTaskDialog from "../components/AddTaskDialog";
 import { Task } from "../types";
 
@@ -13,6 +14,7 @@ export default function Dashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [operationLoading, setOperationLoading] = useState<Record<string, boolean>>({});
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -284,6 +286,39 @@ export default function Dashboard() {
     }
   }, [operationLoading]);
 
+  // 分组任务：未完成和已完成
+  const { incompleteTasks, completedTasks } = useMemo(() => {
+    const incomplete = tasks.filter(task =>
+      !task.nodes.every(node => node.isCompleted)
+    );
+    const completed = tasks.filter(task =>
+      task.nodes.every(node => node.isCompleted)
+    );
+    return { incompleteTasks: incomplete, completedTasks: completed };
+  }, [tasks]);
+
+  // 选中的任务
+  const selectedTask = useMemo(
+    () => tasks.find(t => t.id === selectedTaskId),
+    [tasks, selectedTaskId]
+  );
+
+  // 自动选中第一个未完成任务
+  useEffect(() => {
+    if (!selectedTaskId && incompleteTasks.length > 0) {
+      setSelectedTaskId(incompleteTasks[0].id);
+    } else if (selectedTaskId && !tasks.find(t => t.id === selectedTaskId)) {
+      // 如果选中的任务被删除，重新选中第一个未完成任务
+      if (incompleteTasks.length > 0) {
+        setSelectedTaskId(incompleteTasks[0].id);
+      } else if (completedTasks.length > 0) {
+        setSelectedTaskId(completedTasks[0].id);
+      } else {
+        setSelectedTaskId(null);
+      }
+    }
+  }, [selectedTaskId, incompleteTasks, completedTasks, tasks]);
+
   // 缓存 actions 避免 CurrentTime 重渲染
   const timeActions = useMemo(() => (
     <div className="flex gap-3">
@@ -326,9 +361,10 @@ export default function Dashboard() {
         <CurrentTime actions={timeActions} />
       </div>
 
-      {/* Scrollable task list area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-[1800px] mx-auto px-8 pb-12">
+      {/* Main content area - Left-Right Split */}
+      <div className="flex-1 flex overflow-hidden px-8 pb-8 gap-6">
+        {/* Left side: Task list */}
+        <div className="w-80 bg-white rounded-xl shadow-md overflow-y-auto p-4">
           {isLoading ? (
             <div className="text-center py-12">
               <p className="text-gray-600">Loading...</p>
@@ -338,20 +374,60 @@ export default function Dashboard() {
               <p className="text-gray-600">No tasks yet. Click "Add Task" to create your first task!</p>
             </div>
           ) : (
-            <div className="space-y-6">
-              {tasks.map((task, index) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  index={index}
-                  onAddNote={handleAddNote}
-                  onAddNode={handleAddNode}
-                  onComplete={handleComplete}
-                  onUpdateDescription={handleUpdateDescription}
-                  onDelete={handleDelete}
-                  onCompleteTask={handleCompleteTask}
-                />
-              ))}
+            <>
+              {/* Incomplete tasks */}
+              <div className="space-y-2">
+                {incompleteTasks.map((task) => (
+                  <TaskListItem
+                    key={task.id}
+                    task={task}
+                    isSelected={selectedTaskId === task.id}
+                    isCompleted={false}
+                    onClick={setSelectedTaskId}
+                  />
+                ))}
+              </div>
+
+              {/* Divider */}
+              {completedTasks.length > 0 && (
+                <div className="my-4 border-t-2 border-gray-300 relative">
+                  <span className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-gray-500">
+                    已完成
+                  </span>
+                </div>
+              )}
+
+              {/* Completed tasks */}
+              <div className="space-y-2">
+                {completedTasks.map((task) => (
+                  <TaskListItem
+                    key={task.id}
+                    task={task}
+                    isSelected={selectedTaskId === task.id}
+                    isCompleted={true}
+                    onClick={setSelectedTaskId}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Right side: Timeline */}
+        <div className="flex-1 bg-white rounded-xl shadow-md overflow-y-auto">
+          {selectedTask ? (
+            <TaskTimeline
+              task={selectedTask}
+              onAddNote={handleAddNote}
+              onAddNode={handleAddNode}
+              onComplete={handleComplete}
+              onUpdateDescription={handleUpdateDescription}
+              onDelete={handleDelete}
+              onCompleteTask={handleCompleteTask}
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-500">
+              <p>请从左侧选择一个任务</p>
             </div>
           )}
         </div>
